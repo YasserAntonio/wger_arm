@@ -33,7 +33,7 @@ invoke_cmd = 'invoke '
 
 def main():
     # Change the working directory so that invoke can find the tasks file
-    os.chdir('/home/wger')
+    os.chdir('/home/wger/venv/lib/python3.8/site-packages')
 
     args = sys.argv[1:]
     if len(args):

@@ -18,29 +18,34 @@
 ##########
 # Builder
 ##########
-FROM ubuntu:20.04 as builder
+FROM yasserantonio/wger_base:armv7 as builder
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y \
       build-essential \
-      python3-dev \
+      python3.8-dev \
       python3-pip \
       python3-wheel \
-      git \
-  && rm -rf /var/lib/apt/lists/*
+      wget \
+      git
+RUN apt-get install  --no-install-recommends -y libtiff-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev xli libpq-dev  # solve pillow build fail and psycopg2-binary
+RUN wget http://ftp.us.debian.org/debian/pool/main/libs/libseccomp/libseccomp2_2.5.1-1_armhf.deb && dpkg -i libseccomp2_2.5.1-1_armhf.deb 
+#RUN rm -rf /var/lib/apt/lists/*
 
 # Set up the application
-COPY requirements* ./
-RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r requirements_dev.txt
+COPY requirements.txt ./
+RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r requirements.txt
+COPY requirements_prod.txt ./
+RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r requirements_prod.txt
 
 
 ########
 # Final
 ########
-FROM wger/base:2.0-dev
+FROM yasserantonio/wger_base:armv7 
 LABEL maintainer="Roland Geider <roland@geider.net>"
 
-ARG DOCKER_DIR=./extras/docker/apache
+ARG DOCKER_DIR=.
 EXPOSE 80
 
 
@@ -78,29 +83,36 @@ RUN ln -s /home/wger/static/CACHE /var/www
 USER wger
 
 WORKDIR /home/wger/src
-#RUN git clone https://github.com/wger-project/wger.git
-RUN python3 -m venv /home/wger/venv
+RUN git clone https://github.com/YasserAntonio/wger_arm.git
+RUN python3.8 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \
+    && pip install --upgrade setuptools \
     && pip install wheel \
     && pip install --no-cache /wheels/* \
-    && python setup.py develop \
+    && deactivate
+RUN cat wger/wger/__main__.py
+RUN . /home/wger/venv/bin/activate \
+    && cd wger && ls \
+    && python3.8 setup.py install develop \
+    && cd wger && ls \
     && wger create-settings --database-path /home/wger/db/database.sqlite \
     && wger bootstrap
-
-
+#
+#
 # Change permissions of some files and folders so the apache process
 # can access them.
 RUN mkdir -p ~/static/CACHE ~/media \
-    && ln -s /home/wger/static/CACHE /home/wger/src/CACHE \
-    && chmod g+w /home/wger/static/CACHE \
-    && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
-    && echo STATIC_ROOT=\'/home/wger/static\' >> settings.py
+#    && ln -s /home/wger/static/CACHE /home/wger/src/CACHE \
+    && chmod g+w /home/wger
+#    #/static/CACHE \
+#   && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
+#    && echo STATIC_ROOT=\'/home/wger/static\' >> settings.py
 
-USER root
-RUN apt-get remove build-essential -y \
-    && apt autoremove -y \
-    && chown :www-data -R /home/wger/db \
-    && chmod g+w /home/wger/db /home/wger/db/database.sqlite
+USER rootma
+#RUN apt-get remove build-essential -y \
+#    && apt autoremove -y \
+#    && chown :www-data -R /home/wger/db \
+#    && chmod g+w /home/wger/db /home/wger/db/database.sqlite
 
-ENTRYPOINT ["/home/wger/entrypoint.sh"]
+#ENTRYPOINT ["/home/wger/entrypoint.sh"]

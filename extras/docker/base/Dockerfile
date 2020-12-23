@@ -1,4 +1,5 @@
-#
+#docker buildx build --platform linux/arm/v7 --tag  yasserantonio/wger:armv7 . --push
+
 # Base Docker image for wger images
 #
 #
@@ -15,7 +16,7 @@ LABEL maintainer="Roland Geider <roland@geider.net>"
 # Install dependencies
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y \
+&& apt-get install --no-install-recommends -y \
       git \
       locales \
       nodejs \
@@ -23,10 +24,12 @@ RUN apt-get update \
       python3-venv \
       python3-pip \
       sqlite3 \
-      netcat-openbsd \
-  && rm -rf /var/lib/apt/lists/* \
-  && npm install -g yarn@1.22.5 sass\
-  && locale-gen en_US.UTF-8
+      netcat-openbsd
+RUN rm -rf /var/lib/apt/lists/*
+RUN npm config set strict-ssl false
+RUN npm install -g yarn@1.22.5 sass
+RUN npm config set strict-ssl true
+RUN locale-gen en_US.UTF-8
 
 # Environmental variables
 ENV LANG en_US.UTF-8
@@ -39,3 +42,5 @@ ENV PYTHONUNBUFFERED 1
 
 # Add wger user
 RUN adduser wger --disabled-password --gecos ""
+
+

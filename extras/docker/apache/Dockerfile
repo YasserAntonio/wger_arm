@@ -33,10 +33,11 @@ RUN wget http://ftp.us.debian.org/debian/pool/main/libs/libseccomp/libseccomp2_2
 #RUN rm -rf /var/lib/apt/lists/*
 
 # Set up the application
-COPY requirements.txt ./
-RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r requirements.txt
-COPY requirements_prod.txt ./
-RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r requirements_prod.txt
+RUN git clone https://github.com/YasserAntonio/wger_arm.git \ 
+  && cd wger_arm
+
+RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r ./requirements.txt
+RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r ./requirements_prod.txt
 
 
 ########

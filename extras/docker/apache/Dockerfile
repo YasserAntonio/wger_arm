@@ -28,16 +28,15 @@ RUN apt-get update \
       python3-wheel \
       wget \
       git
+
 RUN apt-get install  --no-install-recommends -y libtiff-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev xli libpq-dev  # solve pillow build fail and psycopg2-binary
 RUN wget http://ftp.us.debian.org/debian/pool/main/libs/libseccomp/libseccomp2_2.5.1-1_armhf.deb && dpkg -i libseccomp2_2.5.1-1_armhf.deb 
 #RUN rm -rf /var/lib/apt/lists/*
 
 # Set up the application
-RUN git clone https://github.com/YasserAntonio/wger_arm.git \ 
-  && cd wger_arm
-
-RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r ./requirements.txt
-RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r ./requirements_prod.txt
+RUN git clone https://github.com/YasserAntonio/wger_arm.git 
+RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r /wger_arm/requirements.txt
+RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r /wger_arm/requirements_prod.txt
 
 
 ########
@@ -46,7 +45,7 @@ RUN pip3 wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r ./requirements_
 FROM yasserantonio/wger_base:armv7 
 LABEL maintainer="Roland Geider <roland@geider.net>"
 
-ARG DOCKER_DIR=.
+ARG DOCKER_DIR=wger_arm
 EXPOSE 80
 
 
@@ -55,11 +54,14 @@ RUN apt-get update \
   && apt-get install --no-install-recommends -y \
     apache2 \
     cron \
-    libapache2-mod-wsgi-py3 \
-  && rm -rf /var/lib/apt/lists/*
+    git\
+    libapache2-mod-wsgi-py3
+ # && rm -rf /var/lib/apt/lists/*
 
 # Configure apache
-COPY ${DOCKER_DIR}/wger.conf /etc/apache2/sites-available/
+RUN git clone https://github.com/YasserAntonio/wger_arm.git 
+RUN mv /wger_arm/* /home/wger
+RUN mv /home/wger/extras/docker/apache/wger.conf /etc/apache2/sites-available/
 RUN a2dissite 000-default.conf \
   && a2enmod headers \
   && a2ensite wger \
@@ -68,9 +70,9 @@ RUN a2dissite 000-default.conf \
   && usermod -G wger www-data
 
 # Configure cron
-COPY ${DOCKER_DIR}/crontab /etc/cron.d/wger
-COPY ${DOCKER_DIR}/venvwrapper /home/wger/venvwrapper
-COPY ${DOCKER_DIR}/entrypoint.sh /home/wger/entrypoint.sh
+RUN mv /home/wger/extras/docker/apache/crontab /etc/cron.d/wger
+RUN mv /home/wger/extras/docker/apache/venvwrapper /home/wger/venvwrapper
+RUN mv /home/wger/extras/docker/apache/entrypoint.sh /home/wger/entrypoint.sh
 
 RUN chmod 0644 /etc/cron.d/wger \
   && chmod +x /home/wger/venvwrapper /home/wger/entrypoint.sh \
@@ -80,23 +82,19 @@ COPY --from=builder /usr/src/app/wheels /wheels
 COPY --chown=wger:www-data . /home/wger/src
 
 # Set up the application
-RUN ln -s /home/wger/static/CACHE /var/www
+RUN ln -s /wger_arm/wger/static/CACHE /var/www
 USER wger
 
-WORKDIR /home/wger/src
-RUN git clone https://github.com/YasserAntonio/wger_arm.git
-RUN python3.8 -m venv /home/wger/venv
+#WORKDIR /home/wger/src
+RUN ls && pwd && python3.8 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \
     && pip install --upgrade setuptools \
     && pip install wheel \
     && pip install --no-cache /wheels/* \
-    && deactivate
-RUN cat wger/wger/__main__.py
-RUN . /home/wger/venv/bin/activate \
-    && cd wger && ls \
-    && python3.8 setup.py install develop \
-    && cd wger && ls \
+    && cd /home/wger \
+    && python3.8 setup.py install \
+    && cd wger \
     && wger create-settings --database-path /home/wger/db/database.sqlite \
     && wger bootstrap
 #

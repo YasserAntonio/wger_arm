@@ -85,18 +85,15 @@ COPY --chown=wger:www-data . /home/wger/src
 RUN ln -s /wger_arm/wger/static/CACHE /var/www
 USER wger
 
-#RUN ls home/wger/wger && coco
-RUN ls && pwd && python3.8 -m venv /home/wger/venv
+WORKDIR /home/wger/src
+RUN python3 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \
-    && pip install --upgrade setuptools \
     && pip install wheel \
     && pip install --no-cache /wheels/* \
-    && cd /home/wger/wger \
-    && python3.8 ../setup.py install \
+    && python setup.py develop \
     && wger create-settings --database-path /home/wger/db/database.sqlite \
-    && wger bootstrap
-#
+    && wger bootstrap \
 #
 # Change permissions of some files and folders so the apache process
 # can access them.

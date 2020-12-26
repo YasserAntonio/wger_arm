@@ -17,10 +17,10 @@ from setuptools import (
 from wger import get_version
 
 
-with open('README.md') as readme:
+with open('../README.md') as readme:
     long_description = readme.read()
 
-with open('requirements.txt') as requirements_production:
+with open('../requirements.txt') as requirements_production:
     install_requires = requirements_production.readlines()
 
 setup(

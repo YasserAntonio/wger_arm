@@ -83,10 +83,9 @@ COPY --chown=wger:www-data . /home/wger/src
 
 # Set up the application
 RUN ln -s /wger_arm/wger/static/CACHE /var/www
-USER wger
 
-WORKDIR /home/wger/src
-#RUN git clone https://github.com/wger-project/wger.git
+RUN rm -rf /home/wger && git clone https://github.com/wger-project/wger.git /home/wger
+WORKDIR /home/wger
 RUN python3 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \

@@ -86,6 +86,7 @@ RUN ln -s /wger_arm/wger/static/CACHE /var/www
 USER wger
 
 WORKDIR /home/wger/src
+#RUN git clone https://github.com/wger-project/wger.git
 RUN python3 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \
@@ -93,7 +94,8 @@ RUN . /home/wger/venv/bin/activate \
     && pip install --no-cache /wheels/* \
     && python setup.py develop \
     && wger create-settings --database-path /home/wger/db/database.sqlite \
-    && wger bootstrap \
+    && wger bootstrap
+#
 #
 # Change permissions of some files and folders so the apache process
 # can access them.

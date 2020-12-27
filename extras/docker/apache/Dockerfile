@@ -94,7 +94,7 @@ RUN apt-get install libjpeg-turbo8
 RUN chmod -R 777 /home/wger
 
 USER wger
-WORKDIR /home/wger
+WORKDIR /home/wger/src
 RUN npm config set strict-ssl false && yarn config set "strict-ssl" false -g
 RUN python3 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \

@@ -2,4 +2,4 @@
 
 . /home/wger/venv/bin/activate
 
-python /home/wger/manage.py "$@"
+python /home/wger/src/manage.py "$@"

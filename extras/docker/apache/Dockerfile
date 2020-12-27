@@ -55,8 +55,11 @@ RUN apt-get update \
     apache2 \
     cron \
     git\
+    wget \
     libapache2-mod-wsgi-py3\
     libjpeg-turbo8
+RUN wget http://ftp.us.debian.org/debian/pool/main/libs/libseccomp/libseccomp2_2.5.1-1_armhf.deb && dpkg -i libseccomp2_2.5.1-1_armhf.deb 
+
  # && rm -rf /var/lib/apt/lists/*
 
 # Configure apache
@@ -72,20 +75,19 @@ RUN a2dissite 000-default.conf \
 
 # Configure cron
 RUN mv /home/wger/extras/docker/apache/crontab /etc/cron.d/wger
-RUN mv /home/wger/extras/docker/apache/venvwrapper /home/wger/venvwrapper
-RUN mv /home/wger/extras/docker/apache/entrypoint.sh /home/wger/entrypoint.sh
-
 RUN chmod 0644 /etc/cron.d/wger \
-  && chmod 777 /home/wger /home/wger/entrypoint.sh \
+  && chmod 777 /home \
   && touch /var/log/cron.log
 
 COPY --from=builder /usr/src/app/wheels /wheels
 COPY --chown=wger:www-data . /home/wger/src
 
 # Set up the application
-RUN ln -s /wger_arm/wger/static/CACHE /var/www
+RUN ln -s /home/wger/static/CACHE /var/www
 
 RUN rm -rf /home/wger && git clone https://github.com/wger-project/wger.git /home/wger
+RUN mv /home/wger/extras/docker/apache/venvwrapper /home/wger/venvwrapper
+RUN mv /home/wger/extras/docker/apache/entrypoint.sh /home/wger/entrypoint.sh
 RUN npm config set strict-ssl false
 RUN yarn config set "strict-ssl" false -g
 WORKDIR /home/wger
@@ -100,17 +102,16 @@ RUN . /home/wger/venv/bin/activate \
     && wger bootstrap
 
 
-# Change permissions of some files and folders so the apache process
-# can access them.
-#RUN mkdir /home/wger/CACHE /home/wger/static/CACHE /home/wger/media \
-#    && ln -s /home/wger/static/CACHE /home/wger/CACHE \
-#    && chmod g+w /home/wger/static/CACHE \
-RUN sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
+RUN mkdir -p static/CACHE media src/CACHE \
+    && ln -s static/CACHE src/CACHE \
+    && chmod -R 777 ../wger  \
+    && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
     && echo STATIC_ROOT=\'/home/wger/static\' >> settings.py
-#USER root
+
+USER root
 RUN apt-get remove build-essential -y \
     && apt autoremove -y \
     && chown :www-data -R /home/wger/db \
-    && chmod -R 777 /home/wger \
     && chmod g+w /home/wger/db /home/wger/db/database.sqlite
+
 ENTRYPOINT ["/home/wger/entrypoint.sh"]

@@ -50,14 +50,12 @@ EXPOSE 80
 
 
 # Install dependencies
-RUN npm config set strict-ssl false
-RUN yarn config set "strict-ssl" false -g
 RUN apt-get update \
   && apt-get install --no-install-recommends -y \
     apache2 \
     cron \
     git\
-    libapache2-mod-wsgi-py3 \
+    libapache2-mod-wsgi-py3\
     libjpeg-turbo8
  # && rm -rf /var/lib/apt/lists/*
 
@@ -87,9 +85,11 @@ COPY --chown=wger:www-data . /home/wger/src
 # Set up the application
 RUN ln -s /wger_arm/wger/static/CACHE /var/www
 
-user wger
-WORKDIR /home/wger
 RUN rm -rf /home/wger && git clone https://github.com/wger-project/wger.git /home/wger
+RUN npm config set strict-ssl false
+RUN yarn config set "strict-ssl" false -g
+WORKDIR /home/wger
+RUN apt-get install libjpeg-turbo8
 RUN python3 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \
@@ -107,7 +107,7 @@ RUN mkdir -p ~/static/CACHE ~/media \
     && chmod g+w /home/wger/static/CACHE \
     && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
     && echo STATIC_ROOT=\'/home/wger/static\' >> settings.py
-USER root
+#USER root
 RUN apt-get remove build-essential -y \
     && apt autoremove -y \
     && chown :www-data -R /home/wger/db \

@@ -90,8 +90,12 @@ RUN mv /home/wger/extras/docker/apache/venvwrapper /home/wger/venvwrapper
 RUN mv /home/wger/extras/docker/apache/entrypoint.sh /home/wger/entrypoint.sh
 RUN npm config set strict-ssl false
 RUN yarn config set "strict-ssl" false -g
-WORKDIR /home/wger
 RUN apt-get install libjpeg-turbo8
+RUN chmod -R 777 /home/wger
+
+USER wger
+WORKDIR /home/wger
+RUN npm config set strict-ssl false && yarn config set "strict-ssl" false -g
 RUN python3 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \
@@ -104,7 +108,6 @@ RUN . /home/wger/venv/bin/activate \
 
 RUN mkdir -p static/CACHE media src/CACHE \
     && ln -s static/CACHE src/CACHE \
-    && chmod -R 777 ../wger  \
     && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
     && echo STATIC_ROOT=\'/home/wger/static\' >> settings.py
 

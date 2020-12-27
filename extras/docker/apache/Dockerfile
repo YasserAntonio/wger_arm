@@ -102,14 +102,15 @@ RUN . /home/wger/venv/bin/activate \
 
 # Change permissions of some files and folders so the apache process
 # can access them.
-RUN mkdir -p ~/static/CACHE ~/media \
-    && ln -s /home/wger/static/CACHE /home/wger/src/CACHE \
-    && chmod g+w /home/wger/static/CACHE \
-    && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
+#RUN mkdir /home/wger/CACHE /home/wger/static/CACHE /home/wger/media \
+#    && ln -s /home/wger/static/CACHE /home/wger/CACHE \
+#    && chmod g+w /home/wger/static/CACHE \
+RUN sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
     && echo STATIC_ROOT=\'/home/wger/static\' >> settings.py
 #USER root
 RUN apt-get remove build-essential -y \
     && apt autoremove -y \
     && chown :www-data -R /home/wger/db \
+    && chmod -R 777 /home/wger \
     && chmod g+w /home/wger/db /home/wger/db/database.sqlite
 ENTRYPOINT ["/home/wger/entrypoint.sh"]

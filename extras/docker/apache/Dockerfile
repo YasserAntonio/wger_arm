@@ -86,21 +86,28 @@ COPY --chown=wger:www-data . /home/wger/src
 RUN ln -s /home/wger/static/CACHE /var/www
 
 RUN rm -rf /home/wger && git clone https://github.com/wger-project/wger.git /home/wger
+RUN git clone https://github.com/wger-project/wger.git /home/wger/src
 RUN mv /home/wger/extras/docker/apache/venvwrapper /home/wger/venvwrapper
 RUN mv /home/wger/extras/docker/apache/entrypoint.sh /home/wger/entrypoint.sh
 RUN npm config set strict-ssl false
 RUN yarn config set "strict-ssl" false -g
 RUN apt-get install libjpeg-turbo8
 RUN chmod -R 777 /home/wger
+RUN apt-get install build-essential -y
+RUN apt-get install python3-dev -y
 
 USER wger
-WORKDIR /home/wger/src
+WORKDIR /home/wger
+
 RUN npm config set strict-ssl false && yarn config set "strict-ssl" false -g
 RUN python3 -m venv /home/wger/venv
 RUN . /home/wger/venv/bin/activate \
     && pip install --upgrade pip \
     && pip install wheel \
     && pip install --no-cache /wheels/* \
+    && yarn add jquery@1.9.1 \
+    && yarn add popper.js@^1.16.1 \
+    && yarn install  \
     && python setup.py develop \
     && wger create-settings --database-path /home/wger/db/database.sqlite \
     && wger bootstrap
@@ -108,8 +115,12 @@ RUN . /home/wger/venv/bin/activate \
 
 RUN mkdir -p static/CACHE media src/CACHE \
     && ln -s static/CACHE src/CACHE \
-    && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/media'" settings.py \
-    && echo STATIC_ROOT=\'/home/wger/static\' >> settings.py
+    && sed -i "/^MEDIA_ROOT/c\MEDIA_ROOT='\/home\/wger\/src\/media'" settings.py \
+    && echo STATIC_ROOT=\'/home/wger/wger/core/static\' >> settings.py \
+    && mkdir dist && mv /home/wger/wger/core/static/yarn/jquery/* dist && mv dist /home/wger/wger/core/static/yarn/jquery \
+    && cp -R /home/wger/wger/core/static/yarn static/yarn \
+    && cp -R /home/wger/wger/core/static/yarn yarn
+
 
 USER root
 RUN apt-get remove build-essential -y \
@@ -118,3 +129,5 @@ RUN apt-get remove build-essential -y \
     && chmod g+w /home/wger/db /home/wger/db/database.sqlite
 
 ENTRYPOINT ["/home/wger/entrypoint.sh"]
+
+#wger/core/static/scss/main.scss:wger/core/static/yarn/bootstrap-compiled.css
